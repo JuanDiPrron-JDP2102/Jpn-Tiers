@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jpn Tiers</title>
+<style>
+:root{--bg:#12141a;--panel:#1a1d25;--line:#2a2e39;--text:#dfe2ea;--dim:#80869a;--gold:#e8b23a;--red:#d9463e}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.4 Verdana,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+a{color:inherit}
+header{background:var(--panel);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 20px;height:54px}
+.logo{font-weight:bold;font-size:18px}
+.logo b{color:var(--gold)}
+button,select,input{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);padding:6px 10px;border-radius:4px}
+button{cursor:pointer;background:var(--panel)}
+button:hover{border-color:var(--dim)}
+button.main{background:var(--gold);color:#111;border-color:var(--gold)}
+nav{display:flex;gap:2px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:12px 14px;color:var(--dim);white-space:nowrap}
+nav button.on{color:var(--text);border-bottom-color:var(--gold)}
+main{max-width:1100px;margin:0 auto;padding:20px}
+#admin{display:none;border:1px dashed var(--gold);padding:12px;margin-bottom:20px}
+#admin p{margin:0 0 8px;color:var(--gold)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#pv{display:none;margin-top:10px;gap:12px;align-items:flex-end}
+#pv img{height:130px}
+.search{width:100%;margin-bottom:12px}
+/* global */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--dim);font-weight:normal;font-size:12px;padding:6px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.pl{cursor:pointer}
+tr.pl:hover{background:var(--panel)}
+.rk{width:44px;font-weight:bold;color:var(--dim)}
+.r1 .rk{color:var(--gold)}
+.who{display:flex;align-items:center;gap:10px}
+.who img{width:36px;height:36px}
+.who small{display:block;color:var(--dim);font-size:12px}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font-size:12px;border:1px solid var(--line);padding:2px 6px;border-radius:3px;background:var(--bg)}
+.chip.H{border-color:var(--gold);color:var(--gold)}
+.pts{text-align:right;font-weight:bold;white-space:nowrap}
+/* modalidad */
+.cols{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.col{background:var(--panel);border:1px solid var(--line);min-height:120px}
+.col h3{margin:0;padding:8px 10px;font-size:14px;border-bottom:1px solid var(--line);color:var(--gold)}
+.col .sub{font-size:11px;color:var(--dim);padding:6px 10px 2px;text-transform:uppercase}
+.mp{display:flex;align-items:center;gap:8px;padding:4px 10px;cursor:pointer}
+.mp:hover{background:var(--bg)}
+.mp img{width:24px;height:24px}
+.mp span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.none{color:var(--dim);font-size:12px;padding:4px 10px}
+@media(max-width:800px){.cols{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.cols{grid-template-columns:1fr}.hide{display:none}}
+/* modales */
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);padding:20px;width:min(380px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog label{display:block;margin:8px 0 3px;font-size:12px;color:var(--dim)}
+dialog input{width:100%}
+.prof{text-align:center}
+.prof img{height:200px}
+.prof h2{margin:8px 0 2px}
+.prof ul{list-style:none;padding:0;margin:12px 0;text-align:left}
+.prof li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+.err{color:var(--red);font-size:13px;min-height:18px}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:30px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Jpn <b>Tiers</b></div>
+  <div id="ubox"></div>
+</header>
+<nav id="nav"></nav>
+
+<main>
+  <div id="admin">
+    <p>Modo admin</p>
+    <div class="row">
+      <input id="nick" placeholder="Nick (como en NameMC)" maxlength="16">
+      <select id="mode"></select>
+      <select id="tier"></select>
+      <button id="bs">Ver skin</button>
+      <label style="font-size:13px;color:var(--dim)">o subir PNG: <input type="file" id="sf" accept="image/png" style="max-width:190px"></label>
+      <button id="ba" class="main">Guardar</button>
+    </div>
+    <div id="msg" style="margin-top:8px;font-size:13px;min-height:18px;color:var(--gold)"></div>
+    <div id="pv" class="row">
+      <img id="pvi" alt="" style="min-width:60px">
+      <div><b id="pvn"></b></div>
+    </div>
+  </div>
+  <input class="search" id="q" placeholder="Buscar jugador...">
+  <div id="view"></div>
+</main>
+<footer>Jpn Tiers · Team JPN</footer>
+
+<dialog id="login">
+  <b>Iniciar sesión</b>
+  <label>Usuario</label><input id="lu">
+  <label>Contraseña</label><input id="lp" type="password">
+  <div class="err" id="le"></div>
+  <div class="row" style="justify-content:flex-end"><button id="lc">Cancelar</button><button class="main" id="lg">Entrar</button></div>
+</dialog>
+<dialog id="pd"><div class="prof" id="pc"></div><div class="row" style="justify-content:center"><button id="pclose">Cerrar</button></div></dialog>
+
+<script>
+const MODES=["Sword","Axe","Mace","UHC","SMP","Pot","NetPot","Vanilla"];
+const TIERS=["HT1","LT1","HT2","LT2","HT3","LT3","HT4","LT4","HT5","LT5"];
+const PTS={HT1:60,LT1:44,HT2:32,LT2:20,HT3:10,LT3:6,HT4:4,LT4:3,HT5:2,LT5:1};
+const RANKS=[[400,"Combat Grandmaster"],[250,"Combat Master"],[100,"Combat Ace"],[50,"Combat Specialist"],[20,"Combat Cadet"],[10,"Combat Novice"],[0,"Rookie"]];
+const $=id=>document.getElementById(id);
+const hs=s=>{let a=3735928559,b=1103547991;for(const c of s){a=Math.imul(a^c.charCodeAt(0),2654435761);b=Math.imul(b^c.charCodeAt(0),1597334677)}return(a>>>0).toString(16)+(b>>>0).toString(16)};
+const USER="juandiprron",HASH=hs("21022012");
+const SRC={
+ head:[n=>"https://mc-heads.net/avatar/"+n+"/48",n=>"https://minotar.net/helm/"+n+"/48.png",n=>"https://starlightskins.lunareclipse.studio/render/default/"+n+"/face"],
+ body:[n=>"https://mc-heads.net/body/"+n+"/right",n=>"https://starlightskins.lunareclipse.studio/render/default/"+n+"/full",n=>"https://minotar.net/armor/body/"+n+"/150.png"]
+};
+const PH="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges"><rect width="8" height="8" fill="#3a3f4d"/><rect x="1" y="1" width="6" height="6" fill="#b98a68"/><rect x="1" y="1" width="6" height="2" fill="#4a3322"/><rect x="2" y="4" width="1" height="1" fill="#fff"/><rect x="5" y="4" width="1" height="1" fill="#fff"/><rect x="3" y="6" width="2" height="1" fill="#6d4a33"/></svg>');
+function img(n,k,alt){
+  const p=(typeof data!=="undefined")&&data.find(x=>x.name.toLowerCase()==n.toLowerCase());
+  if(p&&p.skin)return `<img src="${k=="head"?p.skin.h:p.skin.b}" alt="" style="image-rendering:pixelated">`;
+  const e=encodeURIComponent(n);return `<img src="${SRC[k][0](e)}" data-n="${e}" data-k="${k}" data-i="0" alt="${alt||""}">`}
+document.addEventListener("error",ev=>{
+  const t=ev.target;if(!t.dataset||!t.dataset.k)return;
+  const i=+t.dataset.i+1,list=SRC[t.dataset.k];t.dataset.i=i;
+  t.src=i<list.length?list[i](t.dataset.n):PH;
+},true);
+let pending=null;
+const msg=t=>{$("msg").textContent=t};
+function renderSkin(file){return new Promise((ok,no)=>{
+  const im=new Image();im.onload=()=>{
+    const H=im.height,new64=H>=64;
+    const mk=(w,h)=>{const c=document.createElement("canvas");c.width=w*10;c.height=h*10;const x=c.getContext("2d");x.imageSmoothingEnabled=false;return [c,x]};
+    const [cb,x]=mk(16,32);
+    const d=(sx,sy,w,h,dx,dy,flip)=>{x.save();if(flip){x.translate((dx+w)*10,dy*10);x.scale(-1,1);x.drawImage(im,sx,sy,w,h,0,0,w*10,h*10)}else x.drawImage(im,sx,sy,w,h,dx*10,dy*10,w*10,h*10);x.restore()};
+    d(8,8,8,8,4,0);d(20,20,8,12,4,8);d(44,20,4,12,0,8);d(4,20,4,12,4,20);
+    new64?d(36,52,4,12,12,8):d(44,20,4,12,12,8,true);
+    new64?d(20,52,4,12,8,20):d(4,20,4,12,8,20,true);
+    d(40,8,8,8,4,0);
+    if(new64){d(20,36,8,12,4,8);d(44,36,4,12,0,8);d(52,52,4,12,12,8);d(4,36,4,12,4,20);d(4,52,4,12,8,20)}
+    const [ch,y]=mk(8,8);y.imageSmoothingEnabled=false;y.drawImage(im,8,8,8,8,0,0,80,80);y.drawImage(im,40,8,8,8,0,0,80,80);
+    ok({b:cb.toDataURL(),h:ch.toDataURL()});
+  };im.onerror=()=>no();im.src=URL.createObjectURL(file);
+})}
+const esc=s=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let data=[];try{data=JSON.parse(localStorage.getItem("jpn.data"))||[]}catch(e){}
+let admin=false;try{admin=localStorage.getItem("jpn.admin")=="1"}catch(e){}
+let tab="Global";
+const save=()=>{try{localStorage.setItem("jpn.data",JSON.stringify(data))}catch(e){}};
+
+const total=p=>Object.values(p.tiers).reduce((s,t)=>s+(PTS[t]||0),0);
+const title=pt=>RANKS.find(r=>pt>=r[0])[1];
+
+function draw(){
+  $("admin").style.display=admin?"block":"none";
+  $("ubox").innerHTML=admin?'<span style="color:var(--dim);margin-right:10px">JuanDiPrron</span><button id="out">Salir</button>':'<button id="in">Iniciar sesión</button>';
+  if(admin)$("out").onclick=()=>{admin=false;try{localStorage.removeItem("jpn.admin")}catch(e){}draw()};
+  else $("in").onclick=()=>{$("le").textContent="";$("login").showModal()};
+
+  $("nav").innerHTML=["Global",...MODES].map(m=>`<button class="${m==tab?"on":""}" data-m="${m}">${m}</button>`).join("");
+  $("nav").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.m;draw()});
+
+  const q=$("q").value.trim().toLowerCase();
+  const list=data.filter(p=>p.name.toLowerCase().includes(q));
+  $("view").innerHTML=tab=="Global"?global(list):mode(list,tab);
+  document.querySelectorAll("[data-p]").forEach(e=>e.onclick=()=>profile(e.dataset.p));
+}
+
+function global(list){
+  const L=list.filter(p=>Object.keys(p.tiers).length).sort((a,b)=>total(b)-total(a));
+  if(!L.length)return '<p style="color:var(--dim)">Todavía no hay jugadores.'+(admin?"":" Inicia sesión para añadir.")+"</p>";
+  return '<table><tr><th>#</th><th>Jugador</th><th class="hide">Tiers</th><th style="text-align:right">Puntos</th></tr>'+
+  L.map((p,i)=>{const t=total(p);return `<tr class="pl ${i==0?"r1":""}" data-p="${esc(p.name)}"><td class="rk">${i+1}.</td>
+  <td><div class="who">${img(p.name,"head")}<div>${esc(p.name)}<small>${title(t)}</small></div></div></td>
+  <td class="hide"><div class="chips">${MODES.filter(m=>p.tiers[m]).map(m=>`<span class="chip ${p.tiers[m][0]}">${m} ${p.tiers[m]}</span>`).join("")}</div></td>
+  <td class="pts">${t}</td></tr>`}).join("")+"</table>";
+}
+
+function mode(list,m){
+  let h='<div class="cols">';
+  for(let n=1;n<=5;n++){
+    h+=`<div class="col"><h3>Tier ${n}</h3>`;
+    for(const k of ["HT","LT"]){
+      const ps=list.filter(p=>p.tiers[m]==k+n);
+      h+=`<div class="sub">${k=="HT"?"High":"Low"} Tier ${n}</div>`+
+      (ps.map(p=>`<div class="mp" data-p="${esc(p.name)}">${img(p.name,"head")}<span>${esc(p.name)}</span></div>`).join("")||'<div class="none">-</div>');
+    }
+    h+="</div>";
+  }
+  return h+"</div>";
+}
+
+function profile(n){
+  const p=data.find(x=>x.name==n);if(!p)return;
+  const t=total(p);
+  $("pc").innerHTML=`${img(n,"body")}<h2>${esc(n)}</h2><div style="color:var(--gold)">${title(t)} · ${t} pts</div>
+  <ul>${MODES.filter(m=>p.tiers[m]).map(m=>`<li><span>${m}</span><span><b>${p.tiers[m]}</b>${admin?` <button class="rm" data-m="${m}" title="Quitar" style="padding:0 6px;margin-left:6px">x</button>`:""}</span></li>`).join("")}</ul>
+  ${admin?'<div style="margin-top:10px"><button id="del">Eliminar jugador</button></div>':""}`;
+  if(admin){
+    document.querySelectorAll(".rm").forEach(b=>b.onclick=()=>{
+      delete p.tiers[b.dataset.m];
+      if(!Object.keys(p.tiers).length)data=data.filter(x=>x!==p);
+      save();draw();
+      if(data.includes(p))profile(n);else $("pd").close();
+    });
+    $("del").onclick=function(){
+      if(this.dataset.s!="1"){this.dataset.s="1";this.textContent="Clic otra vez para confirmar";return}
+      data=data.filter(x=>x!==p);save();$("pd").close();draw();
+    };
+  }
+  $("pd").showModal();
+}
+
+$("mode").innerHTML=MODES.map(m=>`<option>${m}</option>`).join("");
+$("tier").innerHTML=TIERS.map(t=>`<option>${t}</option>`).join("")+'<option value="-">Quitar de esta modalidad</option>';
+$("q").oninput=draw;
+$("pclose").onclick=()=>$("pd").close();
+$("lc").onclick=()=>$("login").close();
+$("lg").onclick=()=>{
+  if($("lu").value.trim().toLowerCase()==USER&&hs($("lp").value)==HASH){
+    admin=true;try{localStorage.setItem("jpn.admin","1")}catch(e){}
+    $("login").close();$("lp").value="";draw();
+  }else $("le").textContent="Datos incorrectos";
+};
+$("lp").onkeydown=e=>{if(e.key=="Enter")$("lg").click()};
+
+$("sf").onchange=async()=>{
+  const f=$("sf").files[0];if(!f)return;
+  try{pending=await renderSkin(f);$("pv").style.display="flex";$("pvi").outerHTML='<img id="pvi" style="min-width:60px;image-rendering:pixelated" src="'+pending.b+'" alt="">';$("pvn").textContent=$("nick").value.trim()||"(escribe el nick)"}
+  catch(e){msg("No se pudo leer ese PNG");pending=null}
+};
+function skin(){
+  const n=$("nick").value.trim();
+  if(!/^\w{1,16}$/.test(n)){msg("Nick no válido (1-16 letras, números o _)");return null}
+  if(pending){$("pvn").textContent=n;return n}
+  $("pvi").outerHTML=img(n,"body").replace("<img ","<img id=\"pvi\" style=\"min-width:60px\" ");$("pvn").textContent=n;$("pv").style.display="flex";
+  return n;
+}
+$("bs").onclick=skin;
+$("nick").onkeydown=e=>{if(e.key=="Enter")skin()};
+$("ba").onclick=()=>{
+  const n=skin();if(!n)return;
+  const m=$("mode").value,t=$("tier").value;
+  let p=data.find(x=>x.name.toLowerCase()==n.toLowerCase());
+  if(!p){p={name:n,tiers:{}};data.push(p)}
+  if(t=="-")delete p.tiers[m];else p.tiers[m]=t;
+  if(pending){p.skin=pending;pending=null;$('sf').value=''}
+  if(!Object.keys(p.tiers).length)data=data.filter(x=>x!==p);
+  save();draw();
+  msg(t=="-"?n+" quitado de "+m:n+" guardado en "+m+" como "+t);
+};
+draw();
+</script>
+</body>
+</html>
