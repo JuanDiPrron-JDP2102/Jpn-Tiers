@@ -132,6 +132,15 @@ const RANKS=[[400,"Combat Grandmaster"],[250,"Combat Master"],[100,"Combat Ace"]
 const $=id=>document.getElementById(id);
 const hs=s=>{let a=3735928559,b=1103547991;for(const c of s){a=Math.imul(a^c.charCodeAt(0),2654435761);b=Math.imul(b^c.charCodeAt(0),1597334677)}return(a>>>0).toString(16)+(b>>>0).toString(16)};
 const USER="juandiprron",HASH=hs("21022012");
+const ACCOUNTS={"luklills":{"n":"Luklills","s":"d27062849931714f3b72a63dca5c4b49","h":"1de31eb911090138a94252b65be9fb6d0c76a44758dbca0200444c644785e7ee"},"juancausalito":{"n":"Juancausalito","s":"01a3a8c6d3bd82151ae4b84a824320e3","h":"7162a62f5181ced4e77ee7ca3a5fbc349de488ec7a887353841d298970d13c7d"},"sunnvy7":{"n":"Sunnvy7","s":"60ffa6f107cad289d02b14307ef87830","h":"4a83a24a077354b3cdb1f76c83efe651a9d80b1051147a7247b35d6ff5540eee"},"dulcecece":{"n":"Dulcecece","s":"e43dd516a93db4468fe162199c9da9b7","h":"72621514096b4d63e472f24221944af0ed5d2f349b4e105ade52c487071a75f8"},"vitsjudx_":{"n":"vItsJudx_","s":"0ad4538a315e10fd20d2cc32656ad178","h":"dbfd2d6f3e865495721809d9e68eddd6b557250a62057b0ca52df2ef32721475"},"dark53x":{"n":"Dark53x","s":"98681ab17a7dbca56c96a4e331d1f7b8","h":"4f69c6b17abd3c08d234787bd2561c74069a728a32ffdeb92978825194acf83c"},"xvillix14":{"n":"Xvillix14","s":"6e11170601cdefb64aaa1e3362267e95","h":"ccefc3a6ca0272e924f90d09ba9be4df1086ad329672652a6176c4e2518dff4b"},"vnxsitoow":{"n":"Vnxsitoow","s":"2d1f2bab12f7c15403e738a4c4b5f157","h":"6d161eb9c39407bbb26b489e7e4728845af73d1e68e79518ec82d7942deeb1e0"},"emxmc":{"n":"Emxmc","s":"dbf5045edab76d86c6b060d211d866a5","h":"ce4c4eb6dbaf94d6cb64a8b9e33422e400f40eadac1482ca65d2fb343ceab477"},"d0zw_btw":{"n":"D0zw_btw","s":"678e778259eb0e8714e26fa1178caae5","h":"16e1fd4e516fe213848c66385672aeaa37480da3a32ec09ccc80eac836d933bd"},"abiimalu":{"n":"abiimalu","s":"63108a4b4016099dbe53c1b5a7a07fc3","h":"82ed5122f78a0cf20107c358b8e9dc03118a5aea1ad75288bdc3522ac4de11a8"},"shoanivx":{"n":"SHOANIVX","s":"892632f3b7d185220f4cf64d058cc30a","h":"f89d4a8eff8c3b128a864407f3bf74b8be19bfb8180bf385abe5dd1be1ba5d6f"}};
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+const unhex=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+async function pbk(pw,salt){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  return hex(await crypto.subtle.deriveBits({name:"PBKDF2",salt:unhex(salt),iterations:100000,hash:"SHA-256"},k,256));
+}
+function newPass(){const al="abcdefghjkmnpqrstuvwxyz23456789",r=crypto.getRandomValues(new Uint8Array(10));return [...r].map(x=>al[x%al.length]).join("")}
+let me=null;try{me=localStorage.getItem("jpn.user")}catch(e){}
 const SRC={
  head:[n=>"https://mc-heads.net/avatar/"+n+"/48",n=>"https://minotar.net/helm/"+n+"/48.png",n=>"https://starlightskins.lunareclipse.studio/render/default/"+n+"/face"],
  body:[n=>"https://mc-heads.net/body/"+n+"/right",n=>"https://starlightskins.lunareclipse.studio/render/default/"+n+"/full",n=>"https://minotar.net/armor/body/"+n+"/150.png"]
@@ -207,11 +216,16 @@ async function loadData(){
 const total=p=>Object.values(p.tiers).reduce((s,t)=>s+(PTS[t]||0),0);
 const title=pt=>RANKS.find(r=>pt>=r[0])[1];
 
+const alert2=t=>{const d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);padding:10px 16px;z-index:99";document.body.appendChild(d);setTimeout(()=>d.remove(),2500)};
 function draw(){
   $("admin").style.display=admin?"block":"none";
-  $("ubox").innerHTML='<button id="how" style="margin-right:8px">¿Cómo entrar?</button>'+(admin?'<span style="color:var(--dim);margin-right:10px">JuanDiPrron</span><button id="out">Salir</button>':'<button id="in">Iniciar sesión</button>');
+  $("ubox").innerHTML='<button id="how" style="margin-right:8px">¿Cómo entrar?</button>'+(admin?'<span style="color:var(--dim);margin-right:10px">JuanDiPrron</span><button id="out">Salir</button>':me?`<span style="color:var(--dim);margin-right:10px">${esc(me)}</span><button id="mine" style="margin-right:8px">Mi perfil</button><button id="pout">Salir</button>`:'<button id="in">Iniciar sesión</button>');
   $("how").onclick=()=>$("hd").showModal();
   if(admin)$("out").onclick=()=>{admin=false;data=SEED;try{localStorage.removeItem("jpn.admin")}catch(e){}draw();loadData()};
+  else if(me){
+    $("mine").onclick=()=>{const p=data.find(x=>x.name.toLowerCase()==me.toLowerCase());if(p)profile(p.name);else alert2("Todavía no tienes tiers.")};
+    $("pout").onclick=()=>{me=null;try{localStorage.removeItem("jpn.user")}catch(e){}draw()};
+  }
   else $("in").onclick=()=>{$("le").textContent="";$("login").showModal()};
 
   $("nav").innerHTML=["Global",...MODES].map(m=>`<button class="${m==tab?"on":""}" data-m="${m}">${m}</button>`).join("");
@@ -252,7 +266,7 @@ function profile(n){
   const t=total(p);
   $("pc").innerHTML=`${img(n,"body")}<h2>${esc(n)}</h2><div style="color:var(--gold)">${title(t)} · ${t} pts</div>
   <ul>${MODES.filter(m=>p.tiers[m]).map(m=>`<li><span>${m}</span><span><b>${p.tiers[m]}</b>${admin?` <button class="rm" data-m="${m}" title="Quitar" style="padding:0 6px;margin-left:6px">x</button>`:""}</span></li>`).join("")}</ul>
-  ${admin?'<div style="margin-top:10px"><button id="del">Eliminar jugador</button></div>':""}`;
+  ${admin?'<div style="margin-top:10px"><button id="mk">Crear / reiniciar cuenta</button> <button id="del">Eliminar jugador</button><div id="mkout" style="margin-top:8px;font-size:13px"></div></div>':""}`;
   if(admin){
     document.querySelectorAll(".rm").forEach(b=>b.onclick=()=>{
       delete p.tiers[b.dataset.m];
@@ -260,6 +274,12 @@ function profile(n){
       save();draw();
       if(data.includes(p))profile(n);else $("pd").close();
     });
+    $("mk").onclick=async()=>{
+      if(!window.crypto||!crypto.subtle){$("mkout").textContent="Necesita https o localhost.";return}
+      const pw=newPass(),salt=hex(crypto.getRandomValues(new Uint8Array(16)));
+      p.auth={s:salt,h:await pbk(pw,salt)};save();
+      $("mkout").innerHTML="Usuario: <b>"+esc(p.name)+"</b><br>Contraseña: <b>"+pw+"</b><br><span style='color:var(--dim)'>Cópiala ahora, no se vuelve a mostrar.</span>";
+    };
     $("del").onclick=function(){
       if(this.dataset.s!="1"){this.dataset.s="1";this.textContent="Clic otra vez para confirmar";return}
       data=data.filter(x=>x!==p);save();$("pd").close();draw();
@@ -289,11 +309,22 @@ $("gs").onclick=async()=>{
 $("hc").onclick=()=>$("hd").close();
 $("pclose").onclick=()=>$("pd").close();
 $("lc").onclick=()=>$("login").close();
-$("lg").onclick=()=>{
-  if($("lu").value.trim().toLowerCase()==USER&&hs($("lp").value)==HASH){
+$("lg").onclick=async()=>{
+  const u=$("lu").value.trim(),pw=$("lp").value;
+  if(u.toLowerCase()==USER&&hs(pw)==HASH){
     admin=true;try{localStorage.setItem("jpn.admin","1")}catch(e){}loadData();
-    $("login").close();$("lp").value="";draw();
-  }else $("le").textContent="Datos incorrectos";
+    $("login").close();$("lp").value="";draw();return;
+  }
+  if(!window.crypto||!crypto.subtle){$("le").textContent="Abre la página desde https (GitHub Pages) para iniciar sesión.";return}
+  try{
+    const p=data.find(x=>x.name.toLowerCase()==u.toLowerCase());
+    const rec=(p&&p.auth)||ACCOUNTS[u.toLowerCase()];
+    if(rec&&await pbk(pw,rec.s)==rec.h){
+      me=(p&&p.name)||rec.n;try{localStorage.setItem("jpn.user",me)}catch(e){}
+      $("login").close();$("lp").value="";draw();return;
+    }
+  }catch(e){}
+  $("le").textContent="Datos incorrectos";
 };
 $("lp").onkeydown=e=>{if(e.key=="Enter")$("lg").click()};
 
