@@ -84,6 +84,7 @@ footer{text-align:center;color:var(--dim);font-size:12px;padding:30px}
       <button id="bs">Ver skin</button>
       <label style="font-size:13px;color:var(--dim)">o subir PNG: <input type="file" id="sf" accept="image/png" style="max-width:190px"></label>
       <button id="ba" class="main">Guardar</button>
+      <button id="bx">Publicar: descargar página actualizada</button>
     </div>
     <div id="msg" style="margin-top:8px;font-size:13px;min-height:18px;color:var(--gold)"></div>
     <div id="pv" class="row">
@@ -103,8 +104,14 @@ footer{text-align:center;color:var(--dim);font-size:12px;padding:30px}
   <div class="err" id="le"></div>
   <div class="row" style="justify-content:flex-end"><button id="lc">Cancelar</button><button class="main" id="lg">Entrar</button></div>
 </dialog>
+<dialog id="hd">
+  <b>¿Cómo entrar?</b>
+  <p style="margin:12px 0">Para poder entrar/testear en una modalidad, debes ganarle a una persona con una Tier superior o ganarle a 3 personas con una tier igual a ti.</p>
+  <div class="row" style="justify-content:flex-end"><button id="hc">Entendido</button></div>
+</dialog>
 <dialog id="pd"><div class="prof" id="pc"></div><div class="row" style="justify-content:center"><button id="pclose">Cerrar</button></div></dialog>
 
+<script id="seed" type="application/json">[]</script>
 <script>
 const MODES=["Sword","Axe","Mace","UHC","SMP","Pot","NetPot","Vanilla"];
 const TIERS=["HT1","LT1","HT2","LT2","HT3","LT3","HT4","LT4","HT5","LT5"];
@@ -146,8 +153,10 @@ function renderSkin(file){return new Promise((ok,no)=>{
 })}
 const esc=s=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-let data=[];try{data=JSON.parse(localStorage.getItem("jpn.data"))||[]}catch(e){}
+const SEED=JSON.parse($("seed").textContent||"[]");
 let admin=false;try{admin=localStorage.getItem("jpn.admin")=="1"}catch(e){}
+let data=SEED;
+if(admin){try{data=JSON.parse(localStorage.getItem("jpn.data"))||SEED}catch(e){}}
 let tab="Global";
 const save=()=>{try{localStorage.setItem("jpn.data",JSON.stringify(data))}catch(e){}};
 
@@ -156,8 +165,9 @@ const title=pt=>RANKS.find(r=>pt>=r[0])[1];
 
 function draw(){
   $("admin").style.display=admin?"block":"none";
-  $("ubox").innerHTML=admin?'<span style="color:var(--dim);margin-right:10px">JuanDiPrron</span><button id="out">Salir</button>':'<button id="in">Iniciar sesión</button>';
-  if(admin)$("out").onclick=()=>{admin=false;try{localStorage.removeItem("jpn.admin")}catch(e){}draw()};
+  $("ubox").innerHTML='<button id="how" style="margin-right:8px">¿Cómo entrar?</button>'+(admin?'<span style="color:var(--dim);margin-right:10px">JuanDiPrron</span><button id="out">Salir</button>':'<button id="in">Iniciar sesión</button>');
+  $("how").onclick=()=>$("hd").showModal();
+  if(admin)$("out").onclick=()=>{admin=false;data=SEED;try{localStorage.removeItem("jpn.admin")}catch(e){}draw()};
   else $("in").onclick=()=>{$("le").textContent="";$("login").showModal()};
 
   $("nav").innerHTML=["Global",...MODES].map(m=>`<button class="${m==tab?"on":""}" data-m="${m}">${m}</button>`).join("");
@@ -214,14 +224,15 @@ function profile(n){
   $("pd").showModal();
 }
 
-$("mode").innerHTML=MODES.map(m=>`<option>${m}</option>`).join("");
+$("mode").innerHTML=MODES.map(m=>`<option>${m}</option>`).join("")+"<option>Todas</option>";
 $("tier").innerHTML=TIERS.map(t=>`<option>${t}</option>`).join("")+'<option value="-">Quitar de esta modalidad</option>';
 $("q").oninput=draw;
+$("hc").onclick=()=>$("hd").close();
 $("pclose").onclick=()=>$("pd").close();
 $("lc").onclick=()=>$("login").close();
 $("lg").onclick=()=>{
   if($("lu").value.trim().toLowerCase()==USER&&hs($("lp").value)==HASH){
-    admin=true;try{localStorage.setItem("jpn.admin","1")}catch(e){}
+    admin=true;try{localStorage.setItem("jpn.admin","1");data=JSON.parse(localStorage.getItem("jpn.data"))||data}catch(e){}
     $("login").close();$("lp").value="";draw();
   }else $("le").textContent="Datos incorrectos";
 };
@@ -246,11 +257,23 @@ $("ba").onclick=()=>{
   const m=$("mode").value,t=$("tier").value;
   let p=data.find(x=>x.name.toLowerCase()==n.toLowerCase());
   if(!p){p={name:n,tiers:{}};data.push(p)}
-  if(t=="-")delete p.tiers[m];else p.tiers[m]=t;
+  (m=="Todas"?MODES:[m]).forEach(x=>{if(t=="-")delete p.tiers[x];else p.tiers[x]=t});
   if(pending){p.skin=pending;pending=null;$('sf').value=''}
   if(!Object.keys(p.tiers).length)data=data.filter(x=>x!==p);
   save();draw();
-  msg(t=="-"?n+" quitado de "+m:n+" guardado en "+m+" como "+t);
+  const dm=m=="Todas"?"todas las modalidades":m;
+  msg(t=="-"?n+" quitado de "+dm:n+" guardado en "+dm+" como "+t);
+};
+$("bx").onclick=()=>{
+  const c=document.documentElement.cloneNode(true);
+  c.querySelector("#seed").textContent=JSON.stringify(data).replace(/</g,"\\u003c");
+  ["#view","#ubox","#nav","#msg"].forEach(q=>c.querySelector(q).innerHTML="");
+  c.querySelector("#pv").style.display="none";c.querySelector("#admin").style.display="none";
+  c.querySelectorAll("dialog").forEach(d=>d.removeAttribute("open"));
+  c.querySelector("#q").removeAttribute("value");
+  const blob=new Blob(["<!DOCTYPE html>\n"+c.outerHTML],{type:"text/html"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="index.html";a.click();
+  msg("Descargado index.html con "+data.length+" jugadores. Sube ese archivo a tu hosting para que todos lo vean.");
 };
 draw();
 </script>
